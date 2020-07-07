@@ -82,62 +82,56 @@ app.get('/weather', (req, res) => {
 
     superagent.get(url)
         .then(savedDataWeather => {
-            console.log('hellllo', savedDataWeather);
+            // console.log('hellllo', savedDataWeather);
+            let arr = [];
+            savedDataWeather.body.data.forEach((item, idx) => {
+                if (idx < 8) {
+                    // let weatherDescription = item.weather.description;
+                    // let valid_date = item.valid_date;
+                    let weatherObjData = new Weather(item);
+                    arr.push(weatherObjData);
 
-            let weatherResult = savedDataWeather.body.data.map((item, idx) => {
-                let weatherDescription = item.weather.description;
-                let valid_date = item.valid_date;
-                const weatherObjData = new Weather(weatherDescription, valid_date);
-                return weatherObjData;
-
+                } else {
+                    console.log(idx);
+                }
             });
-            res.status(200).json(weatherResult);
+            res.status(200).json(arr);
         });
 });
 
-function Weather(weatherDescription, valid_date) {
-    this.forecast = weatherDescription;
-    this.time = new Date(valid_date).toDateString();
+function Weather(weatherDescription) {
+    this.forecast = weatherDescription.weather.description;
+    this.time = new Date(weatherDescription.valid_date).toDateString();
 }
 
 app.get('/trails', (req, res) => {
-
     // 200828621-995dc429b6b581202ec03f92e292d9f9  my trails key
     let trailsKer = process.env.TRAILS_KEY;
     let url = `https://www.hikingproject.com/data/get-trails?lat=${arrOfObj[0].latitude}&lon=${arrOfObj[0].longitude}&maxDistance=10&key=${trailsKer}`;
-
+    console.log('helllllll before');
     superagent.get(url)
         .then(savedTrailsData => {
-            console.log(savedTrailsData.body);
-            const trailsObjData = new Trails(savedTrailsData.body);
-            res.status(200).json(savedTrailsData);
+            console.log('helllllll after');
+
+            let trailsResult = savedTrailsData.body.trails.map((item, idx) => {
+                let trailsObjData = new Trails(item);
+                return trailsObjData;
+            });
+            res.status(200).json(trailsResult);
         });
 });
 
 function Trails(trailsData) {
-    //     "name": "Rattlesnake Ledge",
-    //     "location": "Riverbend, Washington",
-    //     "length": "4.3",
-    //     "stars": "4.4",
-    //     "star_votes": "84",
-    //     "summary": "An extremely popular out-and-back hike to the viewpoint on Rattlesnake Ledge.",
-    //     "trail_url": "https://www.hikingproject.com/trail/7021679/rattlesnake-ledge",
-    //     "conditions": "Dry: The trail is clearly marked and well maintained.",
-    //     "condition_date": "2018-07-21",
-    //     "condition_time": "0:00:00 "
-    //   },
-    //   {
-    //     "name": "Mt. Si",
-    //     "location": "Tanner, Washington",
-    //     "length": "6.6",
-    //     "stars": "4.4",
-    //     "star_votes": "72",
-    //     "summary": "A steep, well-maintained trail takes you atop Mt. Si with outrageous views of Puget Sound.",
-    //     "trail_url": "https://www.hikingproject.com/trail/7001016/mt-si",
-    //     "conditions": "Dry",
-    //     "condition_date": "2018-07-22",
-    //     "condition_time": "0:17:22 "
-
+    this.name = trailsData.name;
+    this.location = trailsData.location;
+    this.length = trailsData.length;
+    this.stars = trailsData.stars;
+    this.star_votes = trailsData.star_votes;
+    this.summary = trailsData.summary;
+    this.trail_url = trailsData.trail_url;
+    this.conditions = trailsData.conditions;
+    this.condition_date = new Date(trailsData).toDateString();
+    this.condition_time = new Date(trailsData).toTimeString();
 
 }
 
