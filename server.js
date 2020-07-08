@@ -5,22 +5,19 @@
 require('dotenv').config();
 
 const express = require('express');
-
-//CORS = Cross origin resource sharing 
-// to give permision for who can touch my server
+//CORS = Cross origin resource sharing /to give permision for who can touch my server
 const cors = require('cors');
-
 //we need the superagent to get the response
 const superagent = require('superagent');
-
+const pg = require('pg');
 
 //if the process.env.PORT true git the port inside the .env , if false will giv || PORT 3000
 const PORT = process.env.PORT || 3000;
 // git the express methods to app variable
 const app = express();
-
 // any one can touch my server app (open to any body)
 app.use(cors());
+const client = new pg.Client(process.env.DATABASE_URL);
 
 
 app.get('/', (req, res) => {
@@ -29,23 +26,37 @@ app.get('/', (req, res) => {
 
 // http://localhost:3030/location?city=lynnwood
 app.get('/location', (req, res) => {
-    // // res.send('you are in the location route');
-    // const locationData = require('./data/location.json');
-    // console.log(locationData);
-    // const locationObjData = new Location(city, locationData);
-    // res.send(locationObjData);
 
-    //  1c8585018e3ecc   my key for location
+    let SQL = `SELECT * FROM location WHERE search_query=$1;`;
     const city = req.query.city; // we hold our data inside city variable that it have data after the (/location?data) 
-    let key = process.env.LOCATIONIQ_KEY;
-    let url = `https://eu1.locationiq.com/v1/search.php?key=${key}&q=${city}&format=json`;
+    let safeValue1 = [city];
 
-    superagent.get(url)
-        .then(savedData => {
-            // console.log(savedData);
-            const locationObjData = new Location(city, savedData.body);
-            res.status(200).json(locationObjData);
-        });
+    client.query(SQL, safeValue1)
+        .then(results => {
+            // console.log(results);
+            if (results.rows.length > 0) {
+                res.status(200).json(results.rows);
+            } else {
+                //  1c8585018e3ecc   my key for location
+                let key = process.env.LOCATIONIQ_KEY;
+                let url = `https://eu1.locationiq.com/v1/search.php?key=${key}&q=${city}&format=json`;
+
+                superagent.get(url)
+                    .then(savedData => {
+                        // console.log(savedData);
+                        const locationObjData = new Location(city, savedData.body);
+                        let SQL2 = ` INSERT INTO location (search_query,formatted_query,latitude,longitude) VALUES ($1,$2,$3,$4)`;
+                        let safeValues = [city, locationObjData.formatted_query, locationObjData.latitude, locationObjData.longitude];
+
+                        client.query(SQL2, safeValues)
+                            .then(results => {
+                                res.status(200).json(locationObjData);
+                                // console.log(results);
+                            })
+                    });
+            }
+        })
+        .catch(error => errorHandler(error));
 });
 
 
@@ -132,12 +143,17 @@ app.get('*', (req, res) => {
     res.status(404).send('Not Found');
 });
 
-app.use((error, req, res) => {
+app.use(errorHandler);
+
+
+function errorHandler(error, req, res) {
     res.status(500).send(error);
-});
+}
 
 
-
-app.listen(PORT, () => {
-    console.log(`listening on port ${PORT}`);
-});
+client.connect()
+    .then(() => {
+        app.listen(PORT, () => {
+            console.log(`listening on port ${PORT}`);
+        });
+    })
