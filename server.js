@@ -29,8 +29,6 @@ app.get('/', (req, res) => {
 
 // http://localhost:3030/location?city=lynnwood
 app.get('/location', (req, res) => {
-    arrOfObj = [];
-    // console.log(city);
     // // res.send('you are in the location route');
     // const locationData = require('./data/location.json');
     // console.log(locationData);
@@ -50,18 +48,12 @@ app.get('/location', (req, res) => {
         });
 });
 
-var arrOfObj = [];
 
 function Location(city, locationData) {
-    //     "search_query": "seattle",
-    //     "formatted_query": "Seattle, WA, USA",
-    //     "latitude": "47.606210",
-    //     "longitude": "-122.332071"
     this.search_query = city;
     this.formatted_query = locationData[0].display_name;
     this.latitude = locationData[0].lat;
     this.longitude = locationData[0].lon;
-    arrOfObj.push(this);
 }
 
 // for weather
@@ -76,18 +68,17 @@ app.get('/weather', (req, res) => {
     // res.send(weatherResult);
 
     const city = req.query.city; // we hold our data inside city variable that it have data after the (/location?data) 
+    const lat = req.query.latitude;
+    const lon = req.query.longitude;
     //  494a266d52bd45abb2575d8de8cc7399	mykey for weather
     let weatherKey = process.env.MYWEATHER_KEY;
-    let url = `https://api.weatherbit.io/v2.0/forecast/daily?&lat=${arrOfObj[0].latitude}&lon=${arrOfObj[0].longitude}&key=${weatherKey}`;
+    let url = `https://api.weatherbit.io/v2.0/forecast/daily?&lat=${lat}&lon=${lon}&key=${weatherKey}`;
 
     superagent.get(url)
         .then(savedDataWeather => {
-            // console.log('hellllo', savedDataWeather);
             let arr = [];
             savedDataWeather.body.data.forEach((item, idx) => {
                 if (idx < 8) {
-                    // let weatherDescription = item.weather.description;
-                    // let valid_date = item.valid_date;
                     let weatherObjData = new Weather(item);
                     arr.push(weatherObjData);
 
@@ -107,12 +98,12 @@ function Weather(weatherDescription) {
 app.get('/trails', (req, res) => {
     // 200828621-995dc429b6b581202ec03f92e292d9f9  my trails key
     let trailsKer = process.env.TRAILS_KEY;
-    let url = `https://www.hikingproject.com/data/get-trails?lat=${arrOfObj[0].latitude}&lon=${arrOfObj[0].longitude}&maxDistance=10&key=${trailsKer}`;
-    console.log('helllllll before');
+    const lat = req.query.latitude;
+    const lon = req.query.longitude;
+    let url = `https://www.hikingproject.com/data/get-trails?lat=${lat}&lon=${lon}&maxDistance=10&key=${trailsKer}`;
+    // console.log('helllllll before');
     superagent.get(url)
         .then(savedTrailsData => {
-            console.log('helllllll after');
-
             let trailsResult = savedTrailsData.body.trails.map((item, idx) => {
                 let trailsObjData = new Trails(item);
                 return trailsObjData;
