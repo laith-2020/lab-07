@@ -20,6 +20,8 @@ app.use(cors());
 const client = new pg.Client(process.env.DATABASE_URL);
 
 
+app.get('/yelp', handlerYelp);
+
 app.get('/', (req, res) => {
     res.status(200).send('it work');
 });
@@ -190,25 +192,31 @@ function Movies(moviesData) {
 // const getYelp = require("/server");
 // app.get("/yelp", getYelp);
 
+function handlerYelp(request, response) {
+    let city = request.query.search_query;
+    getYelp(city)
+        .then(data => {
+            response.status(200).send(data);
+        });
+}
+
 //https://api.yelp.com/v3/businesses/search?latitude=${Location.all[0].latitude}&longitude=${Location.all[0].longitude
 
-// function getYelp(req, res) {
-app.get('/yelp', (req, res) => {
-    let city = req.query.search_query;
+function getYelp(city) {
+    // app.get('/yelp', (req, res) => {
+    // let city = req.query.search_query;
     const url = `https://api.yelp.com/v3/businesses/search?location=${city}`;
-    superagent
+    return superagent
         .get(url)
-        .set("Authorization", `Bearer ${process.env.YELP_API_KEY}`)
+        .set('Authorization', `Bearer ${process.env.YELP_API_KEY}`)
         .then((savedYelpData) => {
             const yelpObject = savedYelpData.body.businesses.map((item) => {
-                new Yelp(item);
+                return new Yelp(item);
             });
-            res.send(yelpObject);
+            return yelpObject;
         });
 
-})
-
-// }
+}
 
 function Yelp(yelpData) {
 
