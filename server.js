@@ -56,7 +56,12 @@ app.get('/location', (req, res) => {
                     });
             }
         })
-        .catch(error => errorHandler(error));
+        .catch(error => {
+
+            app.use((error, req, res) => {
+                res.status(500).send(error);
+            });
+        });
 });
 
 
@@ -98,7 +103,7 @@ app.get('/weather', (req, res) => {
                 }
             });
             res.status(200).json(arr);
-        });
+        })
 });
 
 function Weather(weatherDescription) {
@@ -120,7 +125,8 @@ app.get('/trails', (req, res) => {
                 return trailsObjData;
             });
             res.status(200).json(trailsResult);
-        });
+        })
+
 });
 
 function Trails(trailsData) {
@@ -139,43 +145,105 @@ function Trails(trailsData) {
 
 //dafb748c57a66d2723ad793002acb4db
 
-//  https://api.themoviedb.org/3/movie/550?api_key=dafb748c57a66d2723ad793002acb4db
+// http://localhost:3030/movies?query=amman
 
-function Moveis() {
+app.get('/movies', (req, res) => {
+    const city = req.query.search_query;
+    let moviesKey = process.env.MOVIES_KEY;
+    const url = `https://api.themoviedb.org/3/search/movie?api_key=${moviesKey}&query=${city}`;
+    // let url = `https://api.themoviedb.org/3/movie/550?api_key=${moviesKey}`;
 
 
-    //     "title": "Sleepless in Seattle",
-    //     "overview": "A young boy who tries to set his dad up on a date after the death of his mother. He calls into a radio station to talk about his dad’s loneliness which soon leads the dad into meeting a Journalist Annie who flies to Seattle to write a story about the boy and his dad. Yet Annie ends up with more than just a story in this popular romantic comedy.",
-    //     "average_votes": "6.60",
-    //     "total_votes": "881",
-    //     "image_url": "https://image.tmdb.org/t/p/w500/afkYP15OeUOD0tFEmj6VvejuOcz.jpg",
-    //     "popularity": "8.2340",
-    //     "released_on": "1993-06-24"
-    //   },
-    //   {
-    //     "title": "Love Happens",
-    //     "overview": "Dr. Burke Ryan is a successful self-help author and motivational speaker with a secret. While he helps thousands of people cope with tragedy and personal loss, he secretly is unable to overcome the death of his late wife. It's not until Burke meets a fiercely independent florist named Eloise that he is forced to face his past and overcome his demons.",
-    //     "average_votes": "5.80",
-    //     "total_votes": "282",
-    //     "image_url": "https://image.tmdb.org/t/p/w500/pN51u0l8oSEsxAYiHUzzbMrMXH7.jpg",
-    //     "popularity": "15.7500",
-    //     "released_on": "2009-09-18"
+    superagent.get(url)
+        .then(moviesSavedData => {
+            let moviesResult = moviesSavedData.body.results.map((item, idx) => {
+                return new Movies(item);
+                // console.log(moviesObject);
+            })
+            res.status(200).json(moviesResult);
+            // .catch(error => {
+            //     app.use((error, req, res) => {
+            //         res.status(500).send(error);
+            //     });
+        });
+})
+
+
+
+function Movies(moviesData) {
+
+    this.title = moviesData.title;
+    this.overview = moviesData.overview;
+    this.average_votes = moviesData.vote_average;
+    this.total_votes = moviesData.vote_count;
+    this.image_url = `https://image.tmdb.org/t/p/w500${moviesData.poster_path}`;
+    this.image_url = moviesData.poster_path;
+    this.popularity = moviesData.popularity;
+    this.released_on = moviesData.release_date;
 
 }
 
+//  yelp key
+
+// WQxD6XM_3e7vgw16-0Jy2GB6N83MXJ9xFzqZ0G9I2DjUYodB5LB_w0eU1V46st2uSJGAHOYGg1dHmjtZw9HdKBKiHYMmmXDZlUyB1iptSys37inhKrybvS_a-ekIX3Yx
+
+// const getYelp = require("/server");
+// app.get("/yelp", getYelp);
+
+//https://api.yelp.com/v3/businesses/search?latitude=${Location.all[0].latitude}&longitude=${Location.all[0].longitude
+
+// function getYelp(req, res) {
+app.get('/yelp', (req, res) => {
+    let city = req.query.search_query;
+    const url = `https://api.yelp.com/v3/businesses/search?location=${city}`;
+    superagent
+        .get(url)
+        .set("Authorization", `Bearer ${process.env.YELP_API_KEY}`)
+        .then((savedYelpData) => {
+            const yelpObject = savedYelpData.body.businesses.map((item) => {
+                new Yelp(item);
+            });
+            res.send(yelpObject);
+        });
+
+})
+
+// }
+
+function Yelp(yelpData) {
+
+    this.name = yelpData.name;
+    this.image_url = yelpData.image_url;
+    this.price = yelpData.price;
+    this.rating = yelpData.rating;
+    this.url = yelpData.url;
+
+    //   {
+    //     "name": "Pike Place Chowder",
+    //     "image_url": "https://s3-media3.fl.yelpcdn.com/bphoto/ijju-wYoRAxWjHPTCxyQGQ/o.jpg",
+    //     "price": "$$   ",
+    //     "rating": "4.5",
+    //     "url": "https://www.yelp.com/biz/pike-place-chowder-seattle?adjust_creative=uK0rfzqjBmWNj6-d3ujNVA&utm_campaign=yelp_api_v3&utm_medium=api_v3_business_search&utm_source=uK0rfzqjBmWNj6-d3ujNVA"
+    //   },
+    //   {
+    //     "name": "Umi Sake House",
+    //     "image_url": "https://s3-media3.fl.yelpcdn.com/bphoto/c-XwgpadB530bjPUAL7oFw/o.jpg",
+    //     "price": "$$   ",
+    //     "rating": "4.0",
+    //     "url": "https://www.yelp.com/biz/umi-sake-house-seattle?adjust_creative=uK0rfzqjBmWNj6-d3ujNVA&utm_campaign=yelp_api_v3&utm_medium=api_v3_business_search&utm_source=uK0rfzqjBmWNj6-d3ujNVA"
+    //   },
+    //   ...
+}
 
 
 app.get('*', (req, res) => {
     res.status(404).send('Not Found');
 });
 
-app.use(errorHandler);
 
-
-function errorHandler(error, req, res) {
+app.use((error, req, res) => {
     res.status(500).send(error);
-}
-
+});
 
 client.connect()
     .then(() => {
