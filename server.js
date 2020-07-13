@@ -66,34 +66,29 @@ app.get('/location', (req, res) => {
         });
 });
 
+let locationObj = [];
 
 function Location(city, locationData) {
     this.search_query = city;
     this.formatted_query = locationData[0].display_name;
     this.latitude = locationData[0].lat;
     this.longitude = locationData[0].lon;
+    locationObj.push(this);
 }
 
 // for weather
 app.get('/weather', (req, res) => {
 
-    // second way with map to render the result on the page
-    // let weatherResult = weatherData.data.map((item, idx) => {
-    //     const weatherObjData = new Weather(item);
-    //     return weatherObjData;
-    //     // console.log('heloooooo', item);
-    // });
-    // res.send(weatherResult);
-
-    const city = req.query.city; // we hold our data inside city variable that it have data after the (/location?data) 
-    const lat = req.query.latitude;
-    const lon = req.query.longitude;
+    // const lat = req.query.latitude;
+    // const lon = req.query.longitude;
+    console.log(locationObj);
     //  494a266d52bd45abb2575d8de8cc7399	mykey for weather
     let weatherKey = process.env.MYWEATHER_KEY;
-    let url = `https://api.weatherbit.io/v2.0/forecast/daily?&lat=${lat}&lon=${lon}&key=${weatherKey}`;
+    let url = `https://api.weatherbit.io/v2.0/forecast/daily?&lat=${locationObj[0].latitude}&lon=${locationObj[0].longitude}&key=${weatherKey}`;
 
     superagent.get(url)
         .then(savedDataWeather => {
+            console.log(savedDataWeather);
             let arr = [];
             savedDataWeather.body.data.forEach((item, idx) => {
                 if (idx < 8) {
@@ -232,15 +227,6 @@ function Yelp(yelpData) {
     //     "price": "$$   ",
     //     "rating": "4.5",
     //     "url": "https://www.yelp.com/biz/pike-place-chowder-seattle?adjust_creative=uK0rfzqjBmWNj6-d3ujNVA&utm_campaign=yelp_api_v3&utm_medium=api_v3_business_search&utm_source=uK0rfzqjBmWNj6-d3ujNVA"
-    //   },
-    //   {
-    //     "name": "Umi Sake House",
-    //     "image_url": "https://s3-media3.fl.yelpcdn.com/bphoto/c-XwgpadB530bjPUAL7oFw/o.jpg",
-    //     "price": "$$   ",
-    //     "rating": "4.0",
-    //     "url": "https://www.yelp.com/biz/umi-sake-house-seattle?adjust_creative=uK0rfzqjBmWNj6-d3ujNVA&utm_campaign=yelp_api_v3&utm_medium=api_v3_business_search&utm_source=uK0rfzqjBmWNj6-d3ujNVA"
-    //   },
-    //   ...
 }
 
 
